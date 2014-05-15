@@ -5,3 +5,4 @@ relocatable = false
 schema = cartodb
 requires = schema_triggers
 requires = postgis
+requires = plpythonu
