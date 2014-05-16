@@ -1,6 +1,7 @@
 CREATE EXTENSION postgis;
 CREATE EXTENSION schema_triggers;
 CREATE EXTENSION plpythonu;
+CREATE EXTENSION multicorn;
 CREATE EXTENSION cartodb;
 CREATE FUNCTION public.cdb_invalidate_varnish(table_name text)
 RETURNS void AS $$
