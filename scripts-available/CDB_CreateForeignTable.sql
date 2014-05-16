@@ -85,7 +85,9 @@ if url.port:
   fdwsrvnam += ':' + url.port
 fdwsrvnam += '_' + url.path[1:]
 fdwsrvnam += '_' + tablename
-plpy.info('Server name: ' + fdwsrvnam);
+fdwsrvnam = fdwsrvnam[0:63] # truncate to pgsql limit 
+
+plpy.debug('Server name: ' + fdwsrvnam);
 
 # Build safe url (with no auth)
 naurl = url.scheme + '://' + url.hostname
@@ -122,7 +124,7 @@ if url.username:
 #-- Create foreign table 
 #--
 
-fdwtblnam = fdwsrvnam
+fdwtblnam = 'fdw_' + tablename
 query = 'CREATE FOREIGN TABLE public.' + plpy.quote_ident(fdwtblnam) \
       + ' ( '
 sep = ''
@@ -140,7 +142,7 @@ for c in tableobj.columns:
   sep = ', '
 query += ' ) SERVER ' + plpy.quote_ident(fdwsrvnam)
 
-plpy.info('TABLE QUERY: ' + query)
+plpy.debug('TABLE QUERY: ' + query)
 plpy.execute(query)
 
 return 'public.' + fdwtblnam

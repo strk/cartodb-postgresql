@@ -1,19 +1,14 @@
-ERROR:  plpy.Error: Can't load plugin: sqlalchemy.dialects:xxx
-ERROR:  plpy.Error: (InterfaceError) missing dsn and no parameters None None
+ERROR:  plpy.Error: Missing database name from xxx:
+ERROR:  plpy.Error: Missing database name from postgresql:
 ERROR:  plpy.Error: (OperationalError) could not connect to server: Connection refused
 ERROR:  plpy.Error: No such table: notfound
-INFO:  Table spatial_ref_sys cols: 
-INFO:   srid INTEGER
-INFO:   auth_name VARCHAR(256)
-INFO:   auth_srid INTEGER
-INFO:   srtext VARCHAR(2048)
-INFO:   proj4text VARCHAR(2048)
-tadah!
-INFO:  Table lots_of_points cols: 
-INFO:   cartodb_id INTEGER
-INFO:   the_geom GEOMETRY
-tadah!
-INFO:  Table geomtest cols: 
-INFO:   a INTEGER(11)
-INFO:   g GEOMETRY
-tadah!
+fdw_spatial_ref_sys
+
+fdw_spatial_ref_sys
+NOTICE:  drop cascades to user mapping for strk
+
+SELECT 1
+fdw_points
+1|SRID=4326;POINT(0 0)|0
+
+DROP TABLE

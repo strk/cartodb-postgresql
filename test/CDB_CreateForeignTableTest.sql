@@ -1,4 +1,5 @@
 \set VERBOSITY terse
+
 -- Invalid DSN
 select cdb_createforeigntable('xxx://','x');
 -- Missing DSN parts
@@ -18,25 +19,28 @@ select cdb_createforeigntable(
   'postgresql://localhost/' || current_database(),
   'spatial_ref_sys'
 );
-
-SELECT CDB_DropForeignTable(
-  'cdb_fdwsrv_postgresql_localhost_strk_spatial_ref_sys'
-);
+SELECT CDB_DropForeignTable('fdw_spatial_ref_sys');
 
 -- Valid table with username
 select cdb_createforeigntable(
   'postgresql://' || current_user || '@localhost/' || current_database(),
   'spatial_ref_sys'
 );
+SELECT * FROM spatial_ref_sys EXCEPT SELECT * FROM fdw_spatial_ref_sys;
+SELECT CDB_DropForeignTable('fdw_spatial_ref_sys');
+
 -- Valid pgsql table with geometry column
+CREATE TABLE points AS SELECT CDB_LatLng(0,0) as g, 1::int as i, NOW() as d;
 select cdb_createforeigntable(
   'postgresql://localhost/' || current_database(),
-  'lots_of_points'
+  'points'
 );
--- Valid mysql table with geometry column
-select cdb_createforeigntable('mysql://localhost/test','geomtest');
+SELECT i, ST_AsEWKT(g), floor(extract(secs from NOW()-d)) from fdw_points;
+SELECT CDB_DropForeignTable('fdw_points');
+DROP TABLE points;
 
--- TODO: use CDB_DropForeignTable ?
-DROP SERVER cdb_fdwsrv_postgresql_localhost_strk_spatial_ref_sys CASCADE;
-DROP SERVER cdb_fdwsrv_postgresql_localhost_strk_lots_of_points CASCADE;
-DROP SERVER cdb_fdwsrv_mysql_localhost_test_geomtest CASCADE;
+-- Valid mysql table with geometry column
+-- (disabled as I can't control presence of a mysql server)
+--select cdb_createforeigntable('mysql://localhost/test','geomtest');
+--SELECT CDB_DropForeignTable('fdw_geomtest');
+
