@@ -22,24 +22,6 @@ from sqlalchemy import create_engine
 from sqlalchemy.exc import InterfaceError, NoSuchTableError, OperationalError
 from sqlalchemy.schema import Table, Column, MetaData
 
-#---- @{ Spatial integration ----
-
-from sqlalchemy.types import UserDefinedType
-class Geometry(UserDefinedType):
-  name = 'GEOMETRY'
-  def get_col_spec(self):
-    return '%s' % (self.name)
-
-# PostgreSQL
-from sqlalchemy.dialects.postgresql.base import ischema_names
-ischema_names['geometry'] = Geometry
-
-# MySQL
-from sqlalchemy.dialects.mysql.base import ischema_names
-ischema_names['geometry'] = Geometry
-
-#---- Spatial integration @}----
-
 from urlparse import urlparse
 try:
   url = urlparse(db_url)
@@ -58,6 +40,52 @@ else:
   plpy.error("Missing database name from " + url.geturl())
 
 plpy.debug(url.geturl())
+
+#---- @{ Spatial integration ----
+
+from sqlalchemy.types import UserDefinedType
+from sqlalchemy import func
+
+# MySQL
+if url.scheme == 'mysql':
+
+  plpy.debug('Foreign server is MYSQL !')
+
+  class Geometry(UserDefinedType):
+    name = 'GEOMETRY'
+    def get_col_spec(self):
+      return '%s' % (self.name)
+    def bind_expression(self, bindvalue):
+      return func.ST_GeomFromText(bindvalue, type_=self)
+    def column_expression(self, col):
+      return func.AsText(col, type_=self)
+
+  from sqlalchemy.dialects.mysql.base import ischema_names
+  ischema_names['geometry'] = Geometry
+
+  from sqlalchemy.dialects.postgresql.base import ischema_names
+  ischema_names['geometry'] = Geometry
+
+# PostgreSQL
+elif url.scheme == 'postgresql':
+
+  plpy.debug('Foreign server is PostgreSQL !')
+
+  class Geometry(UserDefinedType):
+    name = 'GEOMETRY'
+    def get_col_spec(self):
+      return '%s' % (self.name)
+
+  from sqlalchemy.dialects.postgresql.base import ischema_names
+  ischema_names['geometry'] = Geometry
+
+else:
+
+  plpy.error('Unsupported foreign server ' + url.scheme)
+
+
+#---- Spatial integration @}----
+
 
 try:
   metadata = MetaData(url.geturl())
