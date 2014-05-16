@@ -28,7 +28,6 @@ try:
 except Exception as err:
   plpy.error(str(err))
 
-#-- TODO: forbid anything but scheme 'mysql' or 'postgresql' ?
 plpy.debug("DB_URL scheme: " + url.scheme)
 if url.username:
   plpy.debug("DB_URL username: " + url.username)
