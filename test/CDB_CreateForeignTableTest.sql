@@ -1,4 +1,3 @@
-\i scripts-available/CDB_CreateForeignTable.sql
 \set VERBOSITY terse
 -- Invalid DSN
 select cdb_createforeigntable('xxx://','x');
