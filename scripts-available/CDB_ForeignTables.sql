@@ -6,7 +6,6 @@
 --
 -- @return name of local table (as a regclass)
 --
-DROP FUNCTION IF EXISTS CDB_CreateForeignTable(text, text);
 CREATE OR REPLACE FUNCTION CDB_CreateForeignTable(db_url text, tablename text)
 RETURNS regclass AS $$
 
