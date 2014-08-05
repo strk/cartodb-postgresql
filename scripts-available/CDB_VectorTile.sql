@@ -154,15 +154,15 @@ AS $$
       plpy.notice('___ b is: ' + b)
     grp = 127 & (q>>(7*n))
     b += chr( grp )
-    plpy.notice('out of encode_varint_uint32 b is: ' + b.encode('hex'))
+    #plpy.notice('out of encode_varint_uint32 b is: ' + b.encode('hex'))
     return b
 
   def encode_msg_uint32(b, tag, val):
     b += chr( tag << 3 ) # | 0, for a varint
-    plpy.notice('after encode_msg_uint32 tagging b is: ' + b)
+    #plpy.notice('after encode_msg_uint32 tagging b is: ' + b.encode('hex'))
     val = ( (val << 1) ^ (val >> 31) ) # zig-zag encoding
     b = encode_varint_uint32(b, val)
-    plpy.notice('out of encode_msg_uint32 b is: ' + b.encode('hex'))
+    #plpy.notice('out of encode_msg_uint32 b is: ' + b.encode('hex'))
     return b
 
   def encode_msg_string(b, tag, val):
@@ -171,7 +171,7 @@ AS $$
     # append each byte from the string
     u = bytes(val)
     b += u
-    plpy.notice('out of encode_msg_string b is: ' + b.encode('hex'))
+    #plpy.notice('out of encode_msg_string b is: ' + b.encode('hex'))
     return b
 
   def encode_msg_feature(b, tag, f, flags):
@@ -235,6 +235,8 @@ AS $$
   for k in layer['vals']:
     b = encode_msg_string(b, 4, k)
   #plpy.notice('After vals, buffer is: ' + b.encode('hex'))
+
+  # optional uint32 extent = 5 [ default = 4096 ];
 
   return b;
 $$ LANGUAGE 'plpythonu' IMMUTABLE; -- }
