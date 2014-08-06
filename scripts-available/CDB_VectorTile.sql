@@ -160,23 +160,24 @@ AS $$
     n = 0
     while ((q>>(7*(n+1))) > 0):
       grp=128^(127&(q>>(7*n)))
-      plpy.notice("*grp is " + str(grp));
+      #plpy.notice("*grp is " + str(grp));
       b += chr( grp )
-      plpy.notice('___ b is: ' + b)
+      n = n + 1
+      #plpy.notice('___ b is: ' + b.encode('hex'))
     grp = 127 & (q>>(7*n))
-    plpy.notice("grp is " + str(grp));
+    #plpy.notice("grp is " + str(grp));
     b += bin( grp )
-    plpy.notice("grp was done " + str(grp));
-    plpy.notice('out of encode_varint_uint32 b is: ' + b.encode('hex'))
+    #plpy.notice("grp was done " + str(grp));
+    #plpy.notice('out of encode_varint_uint32 b is: ' + b.encode('hex'))
     return b
 
   def encode_msg_uint32(b, tag, val):
     b += chr( tag << 3 ) # | 0, for a varint
-    plpy.notice('after encode_msg_uint32 tagging b is: ' + b.encode('hex'))
+    #plpy.notice('after encode_msg_uint32 tagging b is: ' + b.encode('hex'))
     val = ( (val << 1) ^ (val >> 31) ) # zig-zag encoding
-    plpy.notice('zigzag val is ' + str(val))
+    #plpy.notice('zigzag val is ' + str(val))
     b = encode_varint_uint32(b, val)
-    plpy.notice('out of encode_msg_uint32 b is: ' + b.encode('hex'))
+    #plpy.notice('out of encode_msg_uint32 b is: ' + b.encode('hex'))
     return b
 
   def encode_msg_string(b, tag, val):
@@ -194,11 +195,11 @@ AS $$
 
     # optional uint64 id = 1 [ default = 0 ];
     if ( flags & 2 ): # include geom id
-      plpy.notice("encoding id " + str(f['id']))
+      #plpy.notice("encoding id " + str(f['id']))
       fb = encode_msg_uint32(fb, 1, f['id'])
 
     # repeated uint32 tags = 2 [ packed = true ];
-    plpy.notice("encoding tags")
+    #plpy.notice("encoding tags")
     tags = f['tags']
     if len(tags):
       tb = bytes()
@@ -231,26 +232,26 @@ AS $$
 
   # required uint32 version = 15 [ default = 1 ];
   b = encode_msg_uint32(b, 15, layer['ver'])
-  plpy.notice('After version: ' + b.encode('hex'))
+  #plpy.notice('After version: ' + b.encode('hex'))
 
   # required string name = 1;
   b = encode_msg_string(b, 1, layer['name'])
-  plpy.notice('After name: ' + b.encode('hex'))
+  #plpy.notice('After name: ' + b.encode('hex'))
 
   # repeated Feature features = 2;
   for k in layer['features']:
     b = encode_msg_feature(b, 2, k, layer['flags'])
-  plpy.notice('After features, buffer is: ' + b.encode('hex'))
+  #plpy.notice('After features, buffer is: ' + b.encode('hex'))
 
   # repeated string keys = 3;
   for k in layer['keys']:
     b = encode_msg_string(b, 3, k)
-  plpy.notice('After keys, buffer is: ' + b.encode('hex'))
+  #plpy.notice('After keys, buffer is: ' + b.encode('hex'))
 
   # repeated Value values = 4;
   for k in layer['vals']:
     b = encode_msg_string(b, 4, k)
-  plpy.notice('After vals, buffer is: ' + b.encode('hex'))
+  #plpy.notice('After vals, buffer is: ' + b.encode('hex'))
 
   # optional uint32 extent = 5 [ default = 4096 ];
 
@@ -301,6 +302,6 @@ SELECT octet_length(CDB_AsVectorTile_Layer(
  VALUES ( 'POINT(0 0)'  ::geometry, 1, 'a', 'A' )
        ,( 'POINT(1 2)'  ::geometry, 2, 'b', 'B' )
        ,( 'POINT(-1 -1)'::geometry, 3, 'c', 'C' )
-       --,( '0101000000000008070E9013400000B8363EA51340', 75757777, 'd','D')
+       ,( '0101000000000008070E9013400000B8363EA51340', 75757777, 'd','D')
        ,( 'POINT(0 0)', 75757777, 'd','D')
 ) as foo(g,i,a1,a2);
