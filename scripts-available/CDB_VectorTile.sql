@@ -166,7 +166,7 @@ AS $$
       #plpy.notice('___ b is: ' + b.encode('hex'))
     grp = 127 & (q>>(7*n))
     #plpy.notice("grp is " + str(grp));
-    b += bin( grp )
+    b += chr( grp )
     #plpy.notice("grp was done " + str(grp));
     #plpy.notice('out of encode_varint_uint32 b is: ' + b.encode('hex'))
     return b
@@ -182,11 +182,13 @@ AS $$
 
   def encode_msg_string(b, tag, val):
     b += chr( (tag << 3) | 2 ) # 2 is length-delimited
+    #plpy.notice('before encoding len: ' + b.encode('hex'))
     b = encode_varint_uint32(b, len(val))
+    #plpy.notice(' after encoding len: ' + b.encode('hex'))
     # append each byte from the string
     u = bytes(val)
     b += u
-    #plpy.notice('out of encode_msg_string b is: ' + b.encode('hex'))
+    #plpy.notice('out of encode_msg_string b (len ' + str(len(val)) + ') is: ' + b.encode('hex'))
     return b
 
   def encode_msg_feature(b, tag, f, flags):
