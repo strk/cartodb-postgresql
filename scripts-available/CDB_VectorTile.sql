@@ -264,6 +264,10 @@ DROP AGGREGATE IF EXISTS
  CDB_AsVectorTile_Layer(CDB_VectorTile_Layer,
                         geometry, bigint, text[], text[], text[]);
 
+-- Return an encoded VectorTile.Layer message
+-- In order to turn into a full VectorTile the caller
+-- needs to prefix the value returned by the aggregate
+-- with tag=3 and size of following layers set 
 CREATE AGGREGATE CDB_AsVectorTile_Layer(
   -- This part must be immutable
   CDB_VectorTile_Layer,
