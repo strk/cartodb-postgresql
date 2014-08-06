@@ -1,5 +1,12 @@
-
---CREATE EXTENSION IF NOT EXISTS HSTORE;
+--
+-- NOTE:
+--
+--  Taking a 1-time configuration state for an aggregate is not good because
+--  it invokes the function creating the configuration once for every
+--  record.
+--
+--
+--
 
 DROP TYPE IF EXISTS CDB_VectorTile_Feature CASCADE;
 
@@ -23,6 +30,7 @@ CREATE OR REPLACE FUNCTION CDB_MakeEmptyVectorTile_Layer(
   flags int DEFAULT 0, -- 1:inc_geom_types 2:inc_geom_id
   ext geometry DEFAULT NULL -- nominal tile extent
 ) RETURNS CDB_VectorTile_Layer AS $$
+  --DO $x$ plpy.notice('CDB_MakeEmptyVectorTile_Layer called') $x$ language 'plpythonu';
   SELECT (
     ver, name, ipx, ipy, sfx, sfy, tol, flags, ext
     --null, null, null
@@ -59,12 +67,13 @@ AS $$
     for k in ['ver','name','ipx','ipy','sfx','sfy','tol','ext','flags']:
       layer[k] = layer_check[k]
 
-  if len(attribute_names) != len(attribute_values):
-    plpy.error('Number of attribute names and values should match')
+  if attribute_names and attribute_values:
+    if len(attribute_names) != len(attribute_values):
+      plpy.error('Number of attribute names and values should match')
 
-  plpy.notice('Layer ' + layer['name'] + ' with version ' \
-    + str(layer['ver']) + ' has ' \
-    + str(len(layer['features'])) + ' features')
+#  plpy.notice('Layer ' + layer['name'] + ' with version ' \
+#    + str(layer['ver']) + ' has ' \
+#    + str(len(layer['features'])) + ' features')
 
   feature = {}
 
@@ -85,7 +94,7 @@ AS $$
   plan = plpy.prepare('SELECT GeometryType($1) t', ['geometry'])
   res = plpy.execute(plan, [geom])
   typname = res[0]['t']
-  plpy.notice("type is " + typname)
+  #plpy.notice("type is " + typname)
   if typname == 'POINT':
     typid = 1
   elif typname == 'LINESTRING':
@@ -108,16 +117,17 @@ AS $$
   # 4. resolve attributes as an array of key/value identifiers, populating
   #    layer.keys and layer.vals and incrementing layer.nkeys and layer.nvals
   #    as needed
-  plpy.notice("attributes are: " + str(attribute_values) + " of type " + str(type(attribute_values)))
+  #plpy.notice("attributes are: " + str(attribute_values) + " of type " + str(type(attribute_values)))
   tags = []
-  for i in range(0, len(attribute_values)):
-    fnam = attribute_names[i]
-    fval = attribute_values[i]
-    fnam_tag = getindex(layer['keys'], fnam)
-    fval_tag = getindex(layer['vals'], fval)
-    plpy.notice(" attname " + fnam + " tag is " + str(fnam_tag))
-    plpy.notice(" attval " + fval + " tag is " + str(fval_tag))
-    tags.append([fnam_tag,fval_tag])
+  if attribute_values:
+    for i in range(0, len(attribute_values)):
+      fnam = attribute_names[i]
+      fval = attribute_values[i]
+      fnam_tag = getindex(layer['keys'], fnam)
+      fval_tag = getindex(layer['vals'], fval)
+      #plpy.notice(" attname " + fnam + " tag is " + str(fnam_tag))
+      #plpy.notice(" attval " + fval + " tag is " + str(fval_tag))
+      tags.append([fnam_tag,fval_tag])
 
   # 5. append the array of key/value identifiers to layer.feature_tags
   feature['tags'] = tags
@@ -150,19 +160,23 @@ AS $$
     n = 0
     while ((q>>(7*(n+1))) > 0):
       grp=128^(127&(q>>(7*n)))
+      plpy.notice("*grp is " + str(grp));
       b += chr( grp )
       plpy.notice('___ b is: ' + b)
     grp = 127 & (q>>(7*n))
-    b += chr( grp )
-    #plpy.notice('out of encode_varint_uint32 b is: ' + b.encode('hex'))
+    plpy.notice("grp is " + str(grp));
+    b += bin( grp )
+    plpy.notice("grp was done " + str(grp));
+    plpy.notice('out of encode_varint_uint32 b is: ' + b.encode('hex'))
     return b
 
   def encode_msg_uint32(b, tag, val):
     b += chr( tag << 3 ) # | 0, for a varint
-    #plpy.notice('after encode_msg_uint32 tagging b is: ' + b.encode('hex'))
+    plpy.notice('after encode_msg_uint32 tagging b is: ' + b.encode('hex'))
     val = ( (val << 1) ^ (val >> 31) ) # zig-zag encoding
+    plpy.notice('zigzag val is ' + str(val))
     b = encode_varint_uint32(b, val)
-    #plpy.notice('out of encode_msg_uint32 b is: ' + b.encode('hex'))
+    plpy.notice('out of encode_msg_uint32 b is: ' + b.encode('hex'))
     return b
 
   def encode_msg_string(b, tag, val):
@@ -180,9 +194,11 @@ AS $$
 
     # optional uint64 id = 1 [ default = 0 ];
     if ( flags & 2 ): # include geom id
+      plpy.notice("encoding id " + str(f['id']))
       fb = encode_msg_uint32(fb, 1, f['id'])
 
     # repeated uint32 tags = 2 [ packed = true ];
+    plpy.notice("encoding tags")
     tags = f['tags']
     if len(tags):
       tb = bytes()
@@ -215,26 +231,26 @@ AS $$
 
   # required uint32 version = 15 [ default = 1 ];
   b = encode_msg_uint32(b, 15, layer['ver'])
-  #plpy.notice('Buffer so far: ' + b.encode('hex'))
+  plpy.notice('After version: ' + b.encode('hex'))
 
   # required string name = 1;
   b = encode_msg_string(b, 1, layer['name'])
-  #plpy.notice('Buffer so far: ' + b.encode('hex'))
+  plpy.notice('After name: ' + b.encode('hex'))
 
   # repeated Feature features = 2;
   for k in layer['features']:
     b = encode_msg_feature(b, 2, k, layer['flags'])
-  #plpy.notice('After features, buffer is: ' + b.encode('hex'))
+  plpy.notice('After features, buffer is: ' + b.encode('hex'))
 
   # repeated string keys = 3;
   for k in layer['keys']:
     b = encode_msg_string(b, 3, k)
-  #plpy.notice('After keys, buffer is: ' + b.encode('hex'))
+  plpy.notice('After keys, buffer is: ' + b.encode('hex'))
 
   # repeated Value values = 4;
   for k in layer['vals']:
     b = encode_msg_string(b, 4, k)
-  #plpy.notice('After vals, buffer is: ' + b.encode('hex'))
+  plpy.notice('After vals, buffer is: ' + b.encode('hex'))
 
   # optional uint32 extent = 5 [ default = 4096 ];
 
@@ -285,4 +301,6 @@ SELECT octet_length(CDB_AsVectorTile_Layer(
  VALUES ( 'POINT(0 0)'  ::geometry, 1, 'a', 'A' )
        ,( 'POINT(1 2)'  ::geometry, 2, 'b', 'B' )
        ,( 'POINT(-1 -1)'::geometry, 3, 'c', 'C' )
+       --,( '0101000000000008070E9013400000B8363EA51340', 75757777, 'd','D')
+       ,( 'POINT(0 0)', 75757777, 'd','D')
 ) as foo(g,i,a1,a2);
