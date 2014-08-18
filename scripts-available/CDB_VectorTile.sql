@@ -1,9 +1,14 @@
 --
 -- NOTE:
 --
---  Taking a 1-time configuration state for an aggregate is not good because
---  it invokes the function creating the configuration once for every
---  record.
+--  1. Taking a 1-time configuration state for an aggregate is not good
+--     because it invokes the function creating the configuration once
+--     for every record.
+--
+--  2. Using the GD python dictionary is not good because all invocations
+--     of the aggregate within the same session share the same variable
+--     (each being in a transaction should make it safer but still direct
+--     calls to the sate function could pollute next aggregate invocation)
 --
 --
 --
