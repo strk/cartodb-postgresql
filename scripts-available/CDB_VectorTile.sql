@@ -185,6 +185,13 @@ AS $$
     #plpy.notice('out of encode_msg_uint32 b is: ' + b.encode('hex'))
     return b
 
+  def encode_msg_enum(b, tag, val):
+    b += chr( tag << 3 ) # | 0, for a varint
+    #plpy.notice('after encode_msg_uint32 tagging b is: ' + b.encode('hex'))
+    b = encode_varint_uint32(b, val)
+    #plpy.notice('out of encode_msg_enum b is: ' + b.encode('hex'))
+    return b
+
   def encode_msg_string(b, tag, val):
     b += chr( (tag << 3) | 2 ) # 2 is length-delimited
     #plpy.notice('before encoding len: ' + b.encode('hex'))
@@ -219,7 +226,7 @@ AS $$
 
     # optional GeomType type = 3 [ default = UNKNOWN ];
     if ( flags & 1 ): # include geom type
-      fb = encode_msg_uint32(fb, 3, f['gtyp'])
+      fb = encode_msg_enum(fb, 3, f['gtyp'])
 
     # repeated uint32 geometry = 4 [ packed = true ];
     l = len(f['geom'])
