@@ -37,7 +37,8 @@ CREATE OR REPLACE FUNCTION CDB_MakeEmptyVectorTile_Layer(
 ) RETURNS CDB_VectorTile_Layer AS $$
   --DO $x$ plpy.notice('CDB_MakeEmptyVectorTile_Layer called') $x$ language 'plpythonu';
   SELECT (
-    ver, name, ipx, ipy, sfx, sfy, tol, flags, ext
+    --ver, name, ipx, ipy, sfx, sfy, tol, flags, ext
+    $1,$2,$3,$4,$5,$6,$7,$8,$9
     --null, null, null
   )::CDB_VectorTile_Layer;
 $$ LANGUAGE 'sql';
