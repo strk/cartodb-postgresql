@@ -85,11 +85,10 @@ AS $$
 
   # 1. append encoded geometry to feature
   plan = plpy.prepare(\
-    "SELECT ST_AsVectorTile_Geometry($1, $2, $3, $4, $5, $6, $7) g", \
-    [ "geometry","float8","float8","float8","float8","float8","geometry" ])
+    "SELECT ST_AsVectorTile_Geometry($1, $2, $3, $4, $5) g", \
+    [ "geometry","float8","float8","float8","float8" ])
   res = plpy.execute(plan, [ geom, layer['ipx'], layer['ipy'], \
-                            layer['sfx'], layer['sfy'], \
-                            layer['tol'], layer['ext'] ])
+                            layer['sfx'], layer['sfy'] ])
   encgeom = res[0]['g']
   feature['geom'] = encgeom
 
